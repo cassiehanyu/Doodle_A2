@@ -1,6 +1,6 @@
 package View;
 
-import Model.Thickness;
+import DataHelper.Thickness;
 import Model.Model;
 import Model.IView;
 

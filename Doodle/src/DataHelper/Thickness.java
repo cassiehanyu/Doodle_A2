@@ -1,4 +1,4 @@
-package Model;
+package DataHelper;
 
 /**
  * Created by cassiehanyu on 2016-02-21.

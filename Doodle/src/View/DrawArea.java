@@ -5,7 +5,10 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.image.BufferedImage;
+import java.rmi.MarshalledObject;
 
+import DataHelper.GameState;
 import Model.Model;
 import Model.IView;
 
@@ -13,7 +16,7 @@ import Model.IView;
  * Created by cassiehanyu on 2016-02-19.
  */
 public class DrawArea extends JComponent {
-    private Image image;
+    private BufferedImage image;
     private Graphics2D g2;
     private int currentX, currentY, oldX, oldY;
     private Model model;
@@ -21,7 +24,7 @@ public class DrawArea extends JComponent {
 
     public DrawArea(Model model){
         this.model = model;
-//        setDoubleBuffered(false);
+        setDoubleBuffered(false);
 //        this.setBackground(Color.white);
 //        this.setPreferredSize(new Dimension(300,300));
         registerListeners();
@@ -29,10 +32,15 @@ public class DrawArea extends JComponent {
         this.model.addView(new IView() {
             @Override
             public void updateView() {
-                if(model.getCurLineSeg()!=null) {
+                setFocusable(true);
+                if(model.getCurLineSeg() != null){
                     drawLine();
-                    repaint();
+//                    repaint();
                 }
+//                else{
+//                    image = null;
+//                }
+                DrawArea.this.repaint();
             }
         });
     }
@@ -40,8 +48,9 @@ public class DrawArea extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g){
+//        super.paintComponent(g);
         if(image == null){
-            image = createImage(getSize().width,getSize().height);
+            image = (BufferedImage) createImage(getSize().width,getSize().height);
             g2 = (Graphics2D) image.getGraphics();
 
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -51,13 +60,15 @@ public class DrawArea extends JComponent {
         }
 //        g.setColor(Color.black);
 //        g.fillRect(0,0,getWidth(),getHeight());
-        g.drawImage(image,0,0,null);
+//        g.drawImage(image,0,0,null);
+          g.drawImage(model.getCurImage(), 0, 0, null);
     }
 
     public void clear(){
         g2.setPaint(Color.pink);
         g2.fillRect(0,0,getSize().width,getSize().height);
-        g2.setPaint(Color.black);
+        model.saveImage(image);
+//        g2.setPaint(Color.black);
         repaint();
     }
 
@@ -68,6 +79,11 @@ public class DrawArea extends JComponent {
                 model.drawStart();
                 oldX = e.getX();
                 oldY = e.getY();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                model.drawFinish();
             }
         });
 
@@ -83,7 +99,8 @@ public class DrawArea extends JComponent {
 
                     /* saveLineSeg contains update view which will call repaint here */
                     model.saveLineSeg(currentX,currentY,oldX,oldY);
-//
+//                    model.saveImage(image);
+
 //                    drawLine();
 //                    repaint();
                     oldX = currentX;
@@ -96,6 +113,17 @@ public class DrawArea extends JComponent {
     private void drawLine(){
         g2.setPaint(new Color(model.getColorSelected()));
         g2.setStroke(new BasicStroke(model.getSelectedThickness().getThickness()));
+
+        int test = model.getCurLineSeg().getOldX();
+        int test2 = model.getCurLineSeg().getOldY();
+        int test3 = model.getCurLineSeg().getCurrentX();
+        int test4 = model.getCurLineSeg().getCurrentY();
+
+
+//        g2.drawLine(model.getCurLineSeg().getOldX(),model.getCurLineSeg().getOldY(),
+//                model.getCurLineSeg().getCurrentX(),model.getCurLineSeg().getCurrentY());
+
         g2.drawLine(oldX,oldY,currentX,currentY);
+        model.saveImage(image);
     }
 }

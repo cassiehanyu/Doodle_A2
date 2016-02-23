@@ -1,8 +1,13 @@
 package Model;
 
-import com.sun.javafx.image.impl.IntArgb;
-import com.sun.javafx.sg.prism.NGShape;
+import DataHelper.GameState;
+import DataHelper.Thickness;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -19,11 +24,19 @@ public class Model extends Object {
     private LineSeg curLineSeg;
     private ArrayList<ArrayList<LineSeg> > lines;
 
+    private Image curImage;
+    private ArrayList<ArrayList<Image> > images;
+
     private int colorSelected;
     private ArrayList<Integer> linesColors;
 
     private Thickness selectedThickness;
     private ArrayList<Thickness> linesThickness;
+
+    int lineNum;
+    private GameState gameState;
+
+    int i = 0, j=0;
 
 
 //
@@ -43,21 +56,35 @@ public class Model extends Object {
         curLineSeg = null;
         colorSelected = 3158323;
         selectedThickness = Thickness.ONE;
+//        gameState = GameState.BEFORE_DRAWING;
         lines = new ArrayList<>();
         linesColors = new ArrayList<>();
+        lines.add(new ArrayList<>());
         linesThickness = new ArrayList<>();
+        lineNum = 0;
+
+        images = new ArrayList<>();
+        images.add(new ArrayList<>());
     }
 
     public LineSeg getCurLineSeg(){
         return curLineSeg;
     }
 
-    public void initNewLineSeg(){
+    public Image getCurImage(){
+        return curImage;
+    }
 
+    public GameState getGameState() {
+        return gameState;
     }
 
     public void setColorSelected(int color){
         colorSelected = color;
+    }
+
+    public int getLineNum(){
+        return lineNum;
     }
 
     public void setSelectedThickness(Thickness thickness){
@@ -71,7 +98,18 @@ public class Model extends Object {
     public void saveLineSeg(int x, int y, int ox, int oy){
         curLineSeg = new LineSeg(x,y,ox,oy);
         lines.get(lines.size()-1).add(curLineSeg);
+//        gameState = GameState.DRAWING;
         updateAllViews();
+    }
+
+    /* too slow */
+    public void saveImage(BufferedImage image){
+//        curImage = image;
+        ColorModel cm = image.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = image.copyData(null);
+        curImage = new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+        images.get(images.size()-1).add(curImage);
     }
 
     public Thickness getSelectedThickness(){
@@ -80,8 +118,33 @@ public class Model extends Object {
 
     public void drawStart(){
         lines.add(new ArrayList<>());
+        images.add(new ArrayList<>());
         linesColors.add(new Integer(colorSelected));
         linesThickness.add(selectedThickness);
+    }
+
+    public void drawFinish(){
+        lineNum++;
+        updateAllViews();
+    }
+
+    public void playback(){
+        curLineSeg = null;
+        if(this.i < lineNum){
+            j++;
+            if(images.get(i).size() <= 0){
+                j = 0;
+            }else{
+                curImage = images.get(i).get(j-1);
+                if(j < images.get(i).size()){
+                    j++;
+                }else{
+                    i++;
+                    j = 0;
+                }
+            }
+        }
+        updateAllViews();
     }
 
 
@@ -110,5 +173,7 @@ public class Model extends Object {
             view.updateView();
         }
     }
+
+
 
 }
