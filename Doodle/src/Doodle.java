@@ -25,7 +25,7 @@ public class Doodle{
 
             public void run() {
                 mainFrame = new JFrame("Doodle");
-                doodleMenuBar = new DoodleMenuBar();
+                doodleMenuBar = new DoodleMenuBar(model);
                 drawArea = new DrawArea(model);
                 playBack = new PlayBack(model);
                 colorPalette = new ColorPalette(model);

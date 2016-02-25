@@ -32,14 +32,14 @@ public class DrawArea extends JComponent {
         this.model.addView(new IView() {
             @Override
             public void updateView() {
-                setFocusable(true);
+//                setFocusable(true);
                 if(model.getCurLineSeg() != null){
                     drawLine();
 //                    repaint();
                 }
-//                else{
-//                    image = null;
-//                }
+                else{
+                    image = null;
+                }
                 DrawArea.this.repaint();
             }
         });
@@ -60,14 +60,14 @@ public class DrawArea extends JComponent {
         }
 //        g.setColor(Color.black);
 //        g.fillRect(0,0,getWidth(),getHeight());
-//        g.drawImage(image,0,0,null);
-          g.drawImage(model.getCurImage(), 0, 0, null);
+        g.drawImage(image,0,0,null);
+//          g.drawImage(model.getCurImage(), 0, 0, null);
     }
 
     public void clear(){
         g2.setPaint(Color.pink);
         g2.fillRect(0,0,getSize().width,getSize().height);
-        model.saveImage(image);
+//        model.saveImage(image);
 //        g2.setPaint(Color.black);
         repaint();
     }
@@ -120,10 +120,10 @@ public class DrawArea extends JComponent {
         int test4 = model.getCurLineSeg().getCurrentY();
 
 
-//        g2.drawLine(model.getCurLineSeg().getOldX(),model.getCurLineSeg().getOldY(),
-//                model.getCurLineSeg().getCurrentX(),model.getCurLineSeg().getCurrentY());
+        g2.drawLine(model.getCurLineSeg().getOldX(),model.getCurLineSeg().getOldY(),
+                model.getCurLineSeg().getCurrentX(),model.getCurLineSeg().getCurrentY());
 
-        g2.drawLine(oldX,oldY,currentX,currentY);
-        model.saveImage(image);
+//        g2.drawLine(oldX,oldY,currentX,currentY);
+//        model.saveImage(image);
     }
 }
