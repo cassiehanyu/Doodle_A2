@@ -1,11 +1,9 @@
 package Model;
 
-import DataHelper.GameState;
 import DataHelper.Thickness;
-import com.sun.org.apache.xpath.internal.operations.Mod;
 
-import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -16,25 +14,29 @@ public class Model extends Object {
 
     private ArrayList<IView> views = new ArrayList<IView>();
 
-    private int windowWidth;
-    private int windowHeight;
+    private int width;
+    private int height;
 
     private LineSeg curLineSeg;
     private ArrayList<ArrayList<LineSeg> > lines;
 
-    private Image curImage;
-    private ArrayList<ArrayList<Image> > images;
-
+    private int originalColor;
     private int colorSelected;
     private ArrayList<Integer> linesColors;
 
+    private Thickness originalThickness;
     private Thickness selectedThickness;
     private ArrayList<Thickness> linesThickness;
 
-    int lineNum;
-    private GameState gameState;
+//    int lineNum;
 
-    int line_index = 0, seg_index=0, seg_num;
+    private int line_index = -1, seg_index = -1, seg_num;
+    private int lineNum;
+    private double timeSlice;
+//    int segIndex = -1;
+
+    private BufferedImage image;
+    private Graphics2D g2;
 
 
 //
@@ -56,30 +58,29 @@ public class Model extends Object {
         selectedThickness = Thickness.ONE;
 //        gameState = GameState.BEFORE_DRAWING;
         lines = new ArrayList<>();
-        lines.add(new ArrayList<>());
+//        lines.add(new ArrayList<>());
+
 
         linesColors = new ArrayList<>();
-        linesColors.add(Color.black.getRGB());
+//        linesColors.add(Color.black.getRGB());
 
         linesThickness = new ArrayList<>();
-        linesThickness.add(Thickness.ONE);
+//        linesThickness.add(Thickness.ONE);
 
-        lineNum = 0;
+//        lineNum = 0;
+
+//        image = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+//        g2 = (Graphics2D) image.getGraphics();
+//        g2.setPaint(Color.pink);
+//        g2.fillRect(0,0,image.getWidth(),image.getHeight());
 
 //        images = new ArrayList<>();
 //        images.add(new ArrayList<>());
     }
 
+    //region getter setter
     public LineSeg getCurLineSeg(){
         return curLineSeg;
-    }
-
-    public Image getCurImage(){
-        return curImage;
-    }
-
-    public GameState getGameState() {
-        return gameState;
     }
 
     public void setColorSelected(int color){
@@ -98,6 +99,10 @@ public class Model extends Object {
         return seg_index;
     }
 
+    public double getTimeSlice(){
+        return timeSlice;
+    }
+
     public int getLineSegNum(int i){
         return lines.get(i).size();
     }
@@ -114,49 +119,73 @@ public class Model extends Object {
         selectedThickness = thickness;
     }
 
-    public int getColorSelected(){
-        return colorSelected;
-    }
-
-    public int getTotalLineSeg(){
-        int count = 0;
-        for(int i = 0; i <= lineNum; i++){
-            count += lines.get(i).size();
-        }
-        return count;
-    }
-
-    public boolean isPlaybackFinished(){
-        boolean finished = line_index > lineNum || lineNum == 0;
-        if(finished) {
-            line_index = 0;
-            seg_index = 0;
-            seg_num = 0;
-        }
-        return finished;
-    }
-
-
-    public void saveLineSeg(int x, int y, int ox, int oy){
-        curLineSeg = new LineSeg(x,y,ox,oy);
-        lines.get(lines.size()-1).add(curLineSeg);
-//        gameState = GameState.DRAWING;
-        updateAllViews();
-    }
-
-    /* too slow */
-//    public void saveImage(BufferedImage image){
-//        curImage = image;
-//        ColorModel cm = image.getColorModel();
-//        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-//        WritableRaster raster = image.copyData(null);
-//        curImage = new BufferedImage(cm, raster, isAlphaPremultiplied, null);
-//        images.get(images.size()-1).add(curImage);
-//    }
-
     public Thickness getSelectedThickness(){
         return selectedThickness;
     }
+
+    public int getWindowHeight()
+    {
+        return height;
+    }
+
+    public int getWindowWidth(){
+        return width;
+    }
+
+    public void setWidth(int width){
+        this.width = width;
+    }
+
+    public void setHeight(int height){
+        this.height = height;
+    }
+
+
+    public int getTotalLineSeg(){
+//        int count = 0;
+//        for(int i = 0; i <= lineNum; i++){
+//            count += lines.get(i).size();
+//        }
+//        return count;
+        return seg_num;
+    }
+
+    public BufferedImage getImage(){
+        if(image == null){
+            image = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+//            image = new BufferedImage(400,400,BufferedImage.TYPE_INT_RGB);
+
+            initImage();
+        }
+        return image;
+    }
+
+    //endregion
+
+
+
+
+    public void saveLineSeg(int x, int y, int ox, int oy){
+        if(!(line_index==-1) && !(seg_index==-1)){
+            int segSize = lines.get(line_index).size();
+            lines.get(line_index).subList(seg_index+1, segSize).clear();
+            lines.subList(line_index+1,lines.size()-1).clear();
+            linesColors.subList(line_index+1,linesColors.size()-1).clear();
+            linesThickness.subList(line_index+1, linesThickness.size()-1).clear();
+            timeSlice = 100;
+            lineNum=lines.size()-1;
+            line_index = -1;
+            seg_index = -1;
+        }
+        curLineSeg = new LineSeg(x,y,ox,oy);
+        lines.get(lines.size()-1).add(curLineSeg);
+//        gameState = GameState.DRAWING;
+        seg_num++;
+        drawLine(ox,oy,x,y);
+        updateAllViews();
+    }
+
+
 
     public void drawStart(){
         lines.add(new ArrayList<>());
@@ -170,88 +199,107 @@ public class Model extends Object {
         updateAllViews();
     }
 
+    public void playbackStart(){
+        line_index = 0;
+        seg_index = 0;
+        initImage();
+    }
+
     public int playback(){
-//        curLineSeg = null;
-//        SwingUtilities.invokeLater(new Runnable() {
-//            public void run() {
-//                System.out.println(Model.this.i);
-//                System.out.println(curLineSeg == null);
-//                updateAllViews();
-//            }
-//        });
-//        new Thread(){
-//            public void run(){
-//                try {
-//                    for (; Model.this.i < lines.size(); Model.this.i++) {
-//                        System.out.println("i: " + Model.this.i);
-//                        for (LineSeg lineSeg : lines.get(i)) {
-//                            curLineSeg = lineSeg;
-//                            Thread.sleep(1000);
-//                        }
-//                        SwingUtilities.invokeLater(new Runnable() {
-//                            public void run() {
-//                                System.out.println(Model.this.i);
-//                                System.out.println(curLineSeg == null);
-//                                updateAllViews();
-//                            }
-//                        });
-//                    }
-//                }catch (Exception e){
-//
-//                }
-//            }
-//        }.start();
-//        for(int i = 0; i < lines.size(); i++){
-//            for(LineSeg lineSeg : lines.get(i)){
-//                curLineSeg = lineSeg;
-//            }
-//            SwingUtilities.invokeLater(new Runnable() {
-//                public void run() {
-//                    updateAllViews();
-//                }
-//            });
-//        }
+        if (this.line_index < lines.size()) {
+            double tickspacing = (double) 100/ (double) lines.size()*(line_index);
+            timeSlice = ((double)seg_index)/((double)lines.get(line_index).size()) * ((double)100) / ((double)lines.size()) + tickspacing;
 
-
-
-//        curLineSeg = null;
-        if(this.line_index <= lineNum){
             colorSelected = linesColors.get(line_index);
             selectedThickness = linesThickness.get(line_index);
             seg_index++;
 //            if(images.get(i).size() <= 0){
-            if(lines.get(line_index).size() <= 0){
+            if (lines.get(line_index).size() <= 0) {
                 curLineSeg = null;
                 seg_index = 0;
                 line_index++;
-            }else{
-//                curImage = images.get(i).get(j-1);
-                curLineSeg = lines.get(line_index).get(seg_index-1);
-                seg_num++;
-                if(seg_index >= lines.get(line_index).size()) {
+            } else {
+//               curImage = images.get(i).get(j-1);
+                curLineSeg = lines.get(line_index).get(seg_index - 1);
+                if (seg_index >= lines.get(line_index).size()) {
                     line_index++;
                     seg_index = 0;
                 }
-//                if(j < images.get(i).size()){
-//                }else{
-//                    i++;
-//                    j = 0;
-//                }
+            }
+        }
+        if (curLineSeg == null) {
+            initImage();
+        } else {
+            drawLine(curLineSeg.getOldX(), curLineSeg.getOldY(),
+                    curLineSeg.getCurrentX(), curLineSeg.getCurrentY());
+        }
+
+
+        updateAllViews();
+        return 0;
+    }
+
+    public boolean isPlaybackFinished(){
+        boolean finished = line_index >= lines.size() || lines.size() == 0;
+
+        if(finished) {
+            line_index = -1;
+            seg_index = -1;
+            seg_num = -1;
+//            segIndex = -1;
+        }
+        return finished;
+    }
+
+    public void startMove(){
+        originalColor = colorSelected;
+        originalThickness = selectedThickness;
+        this.line_index = 0;
+        this.line_index = 0;
+    }
+
+    public void movingSlider(int value, int max){
+        double tickSpace = (double)max / (double)lines.size();
+        timeSlice = value;
+
+        double _line = Math.ceil((double)value / tickSpace);
+        double portion = (value - tickSpace * (_line-1))/ tickSpace;
+        int line = (int) _line;
+
+        int count = 0;
+        initImage();
+        if(line > 0 && line <= lines.size()) {
+            for (int i = 0; i < line - 1; i++) {
+                count += lines.get(i).size();
+            }
+            count += (int) (portion * lines.get(line - 1).size());
+            for (this.line_index = 0; this.line_index < line; this.line_index++) {
+                if(count <= 0) break;
+                ArrayList<LineSeg> curLine = lines.get(this.line_index);
+                colorSelected = linesColors.get(this.line_index);
+                selectedThickness = linesThickness.get(this.line_index);
+                for (this.seg_index = 0; this.seg_index < curLine.size(); this.seg_index++) {
+                    LineSeg seg = curLine.get(this.seg_index);
+                    drawLine(seg.getOldX(), seg.getOldY(), seg.getCurrentX(), seg.getCurrentY());
+                    count--;
+                    if (count <= 0) break;
+                }
+                if(count <= 0) break;
             }
         }
         updateAllViews();
-        return seg_num;
     }
 
 
-    public int getWindowHeight() {
-        return windowHeight;
+    public void finishMove(){
+        colorSelected = originalColor;
+        selectedThickness = originalThickness;
+        this.line_index = -1;
+        this.seg_index = -1;
+
     }
 
-    public int getWindowWidth() {
-        return windowWidth;
-    }
-
+    //region MVC
     /** Add a new view of this triangle. */
     public void addView(IView view) {
         this.views.add(view);
@@ -263,13 +311,31 @@ public class Model extends Object {
         this.views.remove(view);
     }
 
+
     /** Update all the views that are viewing this triangle. */
     private void updateAllViews() {
         for (IView view : this.views) {
             view.updateView();
         }
     }
+    //endregion
 
+    //region image helper function
+    private void drawLine(int oldX, int oldY, int currentX, int currentY){
+        g2.setPaint(new Color(colorSelected));
+        g2.setStroke(new BasicStroke(selectedThickness.getThickness()));
+
+        g2.drawLine(oldX,oldY,currentX,currentY);
+
+    }
+
+    private void initImage(){
+        g2 = (Graphics2D) image.getGraphics();
+        g2.setPaint(Color.pink);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.fillRect(0,0,image.getWidth(),image.getHeight());
+    }
+    //endregion
 
 
 }

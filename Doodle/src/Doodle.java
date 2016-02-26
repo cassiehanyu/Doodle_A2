@@ -25,36 +25,43 @@ public class Doodle{
 
             public void run() {
                 mainFrame = new JFrame("Doodle");
-                doodleMenuBar = new DoodleMenuBar(model);
-                drawArea = new DrawArea(model);
-                playBack = new PlayBack(model);
-                colorPalette = new ColorPalette(model);
-                thicknessChooser = new ThicknessChooser(model);
-//                view = new View();
+                mainFrame.setSize(new Dimension(800,800));
+//                mainFrame.setTitle("Doodle");
+
                 Container container = mainFrame.getContentPane();
                 container.setLayout(new BorderLayout());
+
+                doodleMenuBar = new DoodleMenuBar(model);
                 mainFrame.setJMenuBar(doodleMenuBar);
 
+                colorPalette = new ColorPalette(model);
                 Box vBox = Box.createVerticalBox();
                 vBox.add(colorPalette);
-//              vBox.add(Box.createVerticalGlue());
+
+                thicknessChooser = new ThicknessChooser(model);
                 vBox.add(thicknessChooser);
                 vBox.add(Box.createVerticalGlue());
-
                 mainFrame.add(vBox, BorderLayout.WEST);
+
+
+                playBack = new PlayBack(model);
                 mainFrame.add(playBack, BorderLayout.SOUTH);
+
+
+
+                drawArea = new DrawArea(model);
                 container.add(drawArea,BorderLayout.CENTER);
 
-//
                 mainFrame.setVisible(true);
-                mainFrame.setSize(new Dimension(800,800));
-//
-                mainFrame.setTitle("Doodle");
                 mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //
 //                mainFrame.add(view);
             }
         });
+    }
+
+    private void registerListener(){
+
     }
 
     public static void main(String[] args){

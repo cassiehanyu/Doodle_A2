@@ -9,6 +9,8 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -44,6 +46,8 @@ public class ColorPalette extends JPanel{
         compound = BorderFactory.createCompoundBorder(raisedetched,empty);
         this.setBorder(compound);
 
+        registerListener();
+
         model.addView(new IView() {
             @Override
             public void updateView() {
@@ -76,6 +80,20 @@ public class ColorPalette extends JPanel{
             });
 
         }
+    }
+
+    private void registerListener() {
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.println("ww: " + getHeight() + "hh: " + getHeight());
+                width = getWidth();
+//                ColorPalette.this.setLayout(new GridLayout(0,2,((int)width/10),(int)(width/20)));
+                for(JLabel label : colors){
+                    label.setPreferredSize(new Dimension(getHeight()/16,getHeight()/16));
+                }
+            }
+        });
     }
 
 

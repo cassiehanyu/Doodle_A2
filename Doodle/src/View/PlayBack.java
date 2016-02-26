@@ -8,10 +8,7 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.image.ImageObserver;
 
 /**
@@ -98,7 +95,48 @@ public class PlayBack extends JPanel{
             public void updateView() {
                 timeline.setPaintTicks(true);
                 if(model.getLineNum()!=0)
-                    timeline.setMajorTickSpacing(100/(model.getLineNum()));
+                    timeline.setMajorTickSpacing(100/model.getLineNum());
+                timeline.setValue((int)model.getTimeSlice());
+            }
+        });
+
+        registerListener();
+
+
+    }
+
+    private void registerListener(){
+        timeline.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                model.startMove();
+                model.movingSlider(timeline.getValue(),timeline.getMaximum());
+            }
+//
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                int value = ((JSlider)e.getSource()).getValue();
+//
+////                double tickSpace = (double)timeline.getMaximum() / (double)model.getLineNum();
+//
+////                double lineNum = Math.ceil((double)value / tickSpace);
+////                double portion = (value - tickSpace * (lineNum-1))/ tickSpace;
+//
+//                model.movingSlider(value,timeline.getMaximum());
+////                model.finishMove();
+//            }
+
+//            @Override
+//            public void mouseReleased(MouseEvent e) {
+//                model.finishMove();
+//            }
+
+        });
+
+        timeline.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                model.movingSlider(timeline.getValue(),timeline.getMaximum());
             }
         });
 
@@ -106,6 +144,7 @@ public class PlayBack extends JPanel{
             @Override
             public void mouseClicked(MouseEvent e) {
                 JToggleButton button = (JToggleButton) e.getSource();
+                model.playbackStart();
                 total = model.getTotalLineSeg();
                 if(state == State.FINISHED){
                     state = State.READY;
@@ -133,6 +172,25 @@ public class PlayBack extends JPanel{
             }
         });
 
+        start.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                timeline.setValue(timeline.getMinimum());
+                model.startMove();
+                model.movingSlider(timeline.getMinimum(),timeline.getMinimum());
+                model.finishMove();
+            }
+        });
+
+        end.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                timeline.setValue(timeline.getMaximum());
+                model.startMove();
+                model.movingSlider(timeline.getMaximum(),timeline.getMaximum());
+                model.finishMove();
+            }
+        });
     }
 
 
@@ -146,28 +204,37 @@ public class PlayBack extends JPanel{
 
             if(model.isPlaybackFinished()) {
                 timeline.setValue(timeline.getMaximum());
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        repaint();
+                    }
+                });
+
+//                PlayBack.this.repaint();
                 timer.stop();
                 play.setSelected(false);
                 state = State.FINISHED;
-                timeline.setValue(timeline.getMinimum());
+//                timeline.setValue(timeline.getMinimum());
+//                PlayBack.this.repaint();
             }
-            else{
-
-                int line_index = model.getLine_index();
-                int seg_index = model.getSeg_index();
-                int lineNum = model.getLineNum();
-                int totalSeg = model.getLineSegNum(line_index);
-
-                System.out.println(strokeNum);
-
-
-                double test2 = (double) timeline.getMaximum()/ (double) lineNum*(line_index-1);
-                double test = ((double)(seg_index/totalSeg))* (timeline.getMaximum()/lineNum) + test2;
-
-                double test3 = ((double)seg_index)/((double)totalSeg) * ((double)timeline.getMaximum()) / ((double)lineNum) + test2;
-                System.out.println(test2);
-                timeline.setValue((int)test3);
-            }
+//            else{
+//
+//                int line_index = model.getLine_index();
+//                int seg_index = model.getSeg_index();
+//                int lineNum = model.getLineNum();
+//                int totalSeg = model.getLineSegNum(line_index);
+//
+//                System.out.println(strokeNum);
+//
+//
+//                double test2 = (double) timeline.getMaximum()/ (double) lineNum*(line_index);
+//                double test = ((double)(seg_index/totalSeg))* (timeline.getMaximum()/lineNum) + test2;
+//
+//                double test3 = ((double)seg_index)/((double)totalSeg) * ((double)timeline.getMaximum()) / ((double)lineNum) + test2;
+//                System.out.println(test2);
+//                timeline.setValue((int)test3);
+//            }
         }
     }
 

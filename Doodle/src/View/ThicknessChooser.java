@@ -9,6 +9,8 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -41,7 +43,15 @@ public class ThicknessChooser extends JPanel{
             }
         });
 
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                for(JLabel label : thickLabels){
+                    label.setSize(new Dimension(getWidth()/2,getHeight()/5));
+                }
+            }
 
+        });
     }
 
     private void initThicknessOptions(){
@@ -69,4 +79,11 @@ public class ThicknessChooser extends JPanel{
             this.add(thickLabels.get(thickLabels.size()-1));
         }
     }
+
+//    private float scaleThickness(float value){
+//        int area = model.getImage().getWidth() * model.getImage().getHeight();
+//        double fraction = (double)area/(double)(getSize().width * getSize().height);
+//        double result = (double)value * fraction;
+//        return (float) result;
+//    }
 }
