@@ -29,6 +29,9 @@ public class PlayBack extends JPanel{
     ImageIcon pauseImage;
 
     private Timer timer;
+    private int width = 700;
+    private int height = 700;
+
     private enum State{
         READY,
         RUNNIN,
@@ -46,23 +49,8 @@ public class PlayBack extends JPanel{
         hbox = Box.createHorizontalBox();
 
         this.add(hbox);
+        init();
 
-        startImage = new ImageIcon("pic/start.png");
-        startImage = new ImageIcon(startImage.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));
-        pauseImage = new ImageIcon("pic/pause.png");
-        pauseImage = new ImageIcon(pauseImage.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));
-        play = new JToggleButton();
-        play.setIcon(startImage);
-        play.setSelectedIcon(pauseImage);
-
-
-        ImageIcon imageIcon = new ImageIcon("pic/skip-to-start.png");
-        imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));
-        start = new JButton(imageIcon);
-
-        imageIcon = new ImageIcon("pic/skip-to-end.png");
-        imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));
-        end = new JButton(imageIcon);
 
 
 
@@ -96,11 +84,43 @@ public class PlayBack extends JPanel{
                 timeline.setPaintTicks(true);
                 if(model.getLineNum()!=0)
                     timeline.setMajorTickSpacing(100/model.getLineNum());
-                timeline.setValue((int)model.getTimeSlice());
+                else
+                    timeline.setPaintTicks(false);
+                int sliderValue = (int) model.getTimeSlice();
+                timeline.setValue(sliderValue);
+                if(sliderValue == timeline.getMaximum() || sliderValue == timeline.getMinimum()){
+                    play.setSelected(false);
+                }else{
+                    play.setSelected(true);
+                }
             }
         });
 
         registerListener();
+
+    }
+
+    public void init(){
+        startImage = new ImageIcon("pic/start.png");
+        startImage = new ImageIcon(startImage.getImage().getScaledInstance(width/24,width/24,Image.SCALE_SMOOTH));
+        pauseImage = new ImageIcon("pic/pause.png");
+        pauseImage = new ImageIcon(pauseImage.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));
+        play = new JToggleButton();
+        play.setIcon(startImage);
+        play.setSelectedIcon(pauseImage);
+
+
+        ImageIcon imageIcon = new ImageIcon("pic/skip-to-start.png");
+        imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(width/24,width/24,Image.SCALE_SMOOTH));
+        start = new JButton(imageIcon);
+
+        imageIcon = new ImageIcon("pic/skip-to-end.png");
+        imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(width/24,width/24,Image.SCALE_SMOOTH));
+        end = new JButton(imageIcon);
+
+//        play.setSize(new Dimension(width/24,width/24));
+//        start.setSize(new Dimension(width/24,width/24));
+//        end.setSize(new Dimension(width/24,width/24));
 
 
     }
@@ -126,10 +146,10 @@ public class PlayBack extends JPanel{
 ////                model.finishMove();
 //            }
 
-//            @Override
-//            public void mouseReleased(MouseEvent e) {
-//                model.finishMove();
-//            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                model.finishMove();
+            }
 
         });
 
@@ -143,32 +163,33 @@ public class PlayBack extends JPanel{
         play.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                JToggleButton button = (JToggleButton) e.getSource();
-                model.playbackStart();
-                total = model.getTotalLineSeg();
-                if(state == State.FINISHED){
-                    state = State.READY;
-                }
-                switch (state){
-                    case READY:
-                        timer = new Timer(50 ,new SliderActionListener());
-                        timer.start();
-//                        play.setPressedIcon(pauseImage);
-                        state = State.RUNNIN;
-                        break;
-                    case RUNNIN:
-                        timer.stop();
-//                        button.setIcon(startImage);
-                        state = State.PAUSED;
-                        break;
-                    case PAUSED:
-                        timer.restart();
-//                        button.setIcon(pauseImage);
-                        state = State.RUNNIN;
-                        break;
-                    default:
-                        break;
-                }
+//                model.playbackStart();
+//                total = model.getTotalLineSeg();
+//                if (state == State.FINISHED) {
+//                    state = State.READY;
+//                }
+//
+//                switch (state){
+//                    case READY:
+//                        timer = new Timer(50 ,new SliderActionListener());
+//                        timer.start();
+////                        play.setPressedIcon(pauseImage);
+//                        state = State.RUNNIN;
+//                        break;
+//                    case RUNNIN:
+//                        timer.stop();
+////                        button.setIcon(startImage);
+//                        state = State.PAUSED;
+//                        break;
+//                    case PAUSED:
+//                        timer.restart();
+////                        button.setIcon(pauseImage);
+//                        state = State.RUNNIN;
+//                        break;
+//                    default:
+//                        break;
+//                }
+                model.playback();
             }
         });
 
@@ -191,51 +212,19 @@ public class PlayBack extends JPanel{
                 model.finishMove();
             }
         });
-    }
 
-
-
-    private class SliderActionListener implements ActionListener{
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            int strokeNum = model.playback();
-
-            if(model.isPlaybackFinished()) {
-                timeline.setValue(timeline.getMaximum());
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        repaint();
-                    }
-                });
-
-//                PlayBack.this.repaint();
-                timer.stop();
-                play.setSelected(false);
-                state = State.FINISHED;
-//                timeline.setValue(timeline.getMinimum());
-//                PlayBack.this.repaint();
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.println("pww: " + getWidth() + "phh: " + getHeight());
+                width = getWidth();
+                init();
+                repaint();
+//                ColorPalette.this.setLayout(new GridLayout(0,2,((int)width/10),(int)(width/20)));
             }
-//            else{
-//
-//                int line_index = model.getLine_index();
-//                int seg_index = model.getSeg_index();
-//                int lineNum = model.getLineNum();
-//                int totalSeg = model.getLineSegNum(line_index);
-//
-//                System.out.println(strokeNum);
-//
-//
-//                double test2 = (double) timeline.getMaximum()/ (double) lineNum*(line_index);
-//                double test = ((double)(seg_index/totalSeg))* (timeline.getMaximum()/lineNum) + test2;
-//
-//                double test3 = ((double)seg_index)/((double)totalSeg) * ((double)timeline.getMaximum()) / ((double)lineNum) + test2;
-//                System.out.println(test2);
-//                timeline.setValue((int)test3);
-//            }
-        }
+        });
+
     }
+
 
 }

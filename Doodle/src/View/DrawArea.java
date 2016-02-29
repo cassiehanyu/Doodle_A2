@@ -2,15 +2,12 @@ package View;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.rmi.MarshalledObject;
 
-import DataHelper.GameState;
+import DataHelper.SizeState;
 import Model.Model;
 import Model.IView;
 
@@ -18,17 +15,20 @@ import Model.IView;
  * Created by cassiehanyu on 2016-02-19.
  */
 public class DrawArea extends JComponent {
-    private Image image;
-    private Graphics2D g2;
+    private BufferedImage after;
+//    private Graphics2D g2;
     private int currentX, currentY, oldX, oldY;
     private Model model;
+    private int init, i;
 
 
     public DrawArea(Model model){
+        super();
         this.model = model;
         setDoubleBuffered(false);
+        i = 0;
 //        this.setBackground(Color.white);
-//        this.setPreferredSize(new Dimension(300,300));
+//        this.setPreferredSize(new Dimension(600,600));
 
         registerListeners();
 
@@ -43,7 +43,17 @@ public class DrawArea extends JComponent {
 //                else{
 //                    image = null;
 //                }
-                DrawArea.this.repaint();
+                repaint();
+                if(model.getSizeState() == SizeState.FULLSIZE){
+                    //DrawArea.this.setPreferredSize(new Dimension(model.getImage().getWidth(), model.getImage().getHeight()));
+                }else{
+//                    if(getParent()!=null)
+//                        DrawArea.this.setPreferredSize(new Dimension(getParent().getWidth(),getParent().getHeight()));
+                }
+
+//                if(after != null){
+//                    DrawArea.this.setSize(new Dimension(after.getWidth(),after.getHeight()));
+//                }
             }
         });
     }
@@ -51,50 +61,37 @@ public class DrawArea extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g){
-//        super.paintComponent(g);
-        if(image == null){
-            image = (BufferedImage) createImage(getSize().width,getSize().height);
-            g2 = (Graphics2D) image.getGraphics();
+        int x = getX();
+        int y = getY();
 
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            clear();
-//
-        }
         Graphics2D g2d = (Graphics2D) g;
-//        g.setColor(Color.black);
-//        g.fillRect(0,0,getWidth(),getHeight());
-        model.setWidth(getSize().width);
-        model.setHeight(getSize().height);
-        int f = getSize().height;
 
-        /* good method to translate image */
+//        /* good method to translate image */
         BufferedImage before = model.getImage();
-        int w = before.getWidth();
-        int h = before.getHeight();
-        BufferedImage after = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-        AffineTransform at = new AffineTransform();
-        double s = (double) getWidth()/(double)w;
-        at.scale((double) getWidth()/(double)w, (double) getHeight()/(double)h);
-        AffineTransformOp scaleOp =
+        if(model.getSizeState() == SizeState.FITSIZE) {
+            int w = before.getWidth();
+            int h = before.getHeight();
+            after = new BufferedImage(getParent().getWidth(), getParent().getHeight(), BufferedImage.TYPE_INT_RGB);
+            AffineTransform at = new AffineTransform();
+            at.scale((double) getParent().getWidth()/(double)w, (double) getParent().getHeight()/(double)h);
+            AffineTransformOp scaleOp =
                 new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-        after = scaleOp.filter(before, after);
+            after = scaleOp.filter(before, after);
+            g.drawImage(after,0-getX(),0-getY(),null);
+        }else {
+            after = before;
+            g.drawImage(after,0,0,null);
+            DrawArea.this.setPreferredSize(new Dimension(model.getImage().getWidth(), model.getImage().getHeight()));
+        }
 //        g2d.setTransform(at);
 //        g2d.drawImage(model.getImage(),at,this);
 //        image = model.getImage().getScaledInstance(getSize().width, getSize().height,Image.SCALE_AREA_AVERAGING);
 //        g.drawImage(model.getImage(),0,0,null);
 
-        g.drawImage(after,0,0,null);
-//        g2d.drawImage(after,0,0,null);
 
-//          g.drawImage(model.getCurImage(), 0, 0, null);
-    }
+//        g2d.drawImage(after,0-getX(),0-getY(),null);
 
-    public void clear(){
-        g2.setPaint(Color.pink);
-        g2.fillRect(0,0,getSize().width,getSize().height);
-        g2.setPaint(Color.black);
-        repaint();
+//          g.drawImage(model.getImage(), 0, 0, null);
     }
 
     //region listeners
@@ -102,12 +99,13 @@ public class DrawArea extends JComponent {
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                init = (int) System.currentTimeMillis();
                 oldX = e.getX();
                 oldY = e.getY();
                 currentX = e.getX();
                 currentY = e.getY();
                 model.drawStart();
-                model.saveLineSeg(scaleX(currentX),scaleY(currentY),scaleX(oldX),scaleY(oldY));
+                model.saveLineSeg(scaleX(currentX),scaleY(currentY),scaleX(oldX),scaleY(oldY),init);
             }
 
             @Override
@@ -120,44 +118,42 @@ public class DrawArea extends JComponent {
         this.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
+                i = (int) System.currentTimeMillis();
+                System.out.println(i - init);
+                int temp = i - init;
+                init = i;
                 currentX = e.getX();
                 currentY = e.getY();
 
-                if(g2 != null){
+//                if(g2 != null){
                     //here needs improve so that i can have lines with different thickness
 //                    g2.drawLine(oldX,oldY,currentX,currentY);
 
                     /* saveLineSeg contains update view which will call repaint here */
 
 //                    model.saveLineSeg(currentX,currentY,oldX,oldY);
-                    model.saveLineSeg(scaleX(currentX),scaleY(currentY),scaleX(oldX),scaleY(oldY));
+                    model.saveLineSeg(scaleX(currentX),scaleY(currentY),scaleX(oldX),scaleY(oldY),i);
 
 //                    drawLine();
 //                    repaint();
                     oldX = currentX;
                     oldY = currentY;
-                }
+//                }
+            }
+        });
+
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+//                System.out.println("ww: " + getWidth() + "hh: " + getHeight());
+                int width = getWidth();
+                repaint();
+//                ColorPalette.this.setLayout(new GridLayout(0,2,((int)width/10),(int)(width/20)));
             }
         });
     }
     //endregion
 
-//    private void drawLine(){
-//        g2.setPaint(new Color(model.getColorSelected()));
-//        g2.setStroke(new BasicStroke(model.getSelectedThickness().getThickness()));
-//
-//        int test = model.getCurLineSeg().getOldX();
-//        int test2 = model.getCurLineSeg().getOldY();
-//        int test3 = model.getCurLineSeg().getCurrentX();
-//        int test4 = model.getCurLineSeg().getCurrentY();
-//
-//
-//        g2.drawLine(model.getCurLineSeg().getOldX(),model.getCurLineSeg().getOldY(),
-//                model.getCurLineSeg().getCurrentX(),model.getCurLineSeg().getCurrentY());
-//
-////        g2.drawLine(oldX,oldY,currentX,currentY);
-////        model.saveImage(image);
-//    }
 
     private int scaleX(int value){
         int width = model.getImage().getWidth();
