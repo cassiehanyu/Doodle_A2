@@ -295,6 +295,7 @@ public class Model extends Object {
 
     public void drawFinish(){
         lineNum++;
+        timeSlice = 100;
         updateAllViews();
     }
     //endregion
@@ -327,37 +328,6 @@ public class Model extends Object {
             curLineSeg = lines.get(line_index).get(seg_index);
         }
 
-//        if (this.line_index < lines.size()) {
-//            System.out.println(line_index);
-//            double tickspacing = (double) 100/ (double) lines.size()*(line_index);
-//            timeSlice = ((double)seg_index)/((double)lines.get(line_index).size()) * ((double)100) / ((double)lines.size()) + tickspacing;
-//
-//            colorSelected = linesColors.get(line_index);
-//            selectedThickness = linesThickness.get(line_index);
-//            seg_index++;
-////            if(images.get(i).size() <= 0){
-//            if (lines.get(line_index).size() <= 0) {
-//                curLineSeg = null;
-//                seg_index = 0;
-//                line_index++;
-//            } else {
-//
-//                if(seg_index != 0 || (seg_index == 0 && lines.get(line_index).size() == 1)){
-//                    curLineSeg = lines.get(line_index).get(seg_index - 1);
-//                }
-//                if (seg_index >= lines.get(line_index).size()) {
-//                    line_index++;
-//                    seg_index = 0;
-//                }
-//            }
-//        }
-//        if (curLineSeg == null) {
-//            initImage();
-//        } else {
-//            drawLine(curLineSeg.getOldX(), curLineSeg.getOldY(),
-//                    curLineSeg.getCurrentX(), curLineSeg.getCurrentY());
-//        }
-//        updateAllViews();
         return 0;
     }
 
@@ -415,14 +385,17 @@ public class Model extends Object {
                 }
                 if(count <= 0) break;
             }
+        }else if(line == 0){
+            colorSelected = linesColors.get(0);
+            selectedThickness = linesThickness.get(0);
         }
         updateAllViews();
     }
 
 
     public void finishMove(){
-        colorSelected = originalColor;
-        selectedThickness = originalThickness;
+//        colorSelected = originalColor;
+//        selectedThickness = originalThickness;
     }
     //endregion
 
@@ -489,11 +462,17 @@ public class Model extends Object {
             updateAllViews();
             if(isPlaybackFinished()) {
                 timeSlice = 100;
-                updateAllViews();
+//                updateAllViews();
 //                PlayBack.this.repaint();
                 drawLine(prev.getOldX(), prev.getOldY(),
                         prev.getCurrentX(), prev.getCurrentY());
-                updateAllViews();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateAllViews();
+                    }
+                });
+//                updateAllViews();
                 timer.stop();
             }else {
                 prev = curLineSeg;
